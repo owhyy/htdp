@@ -4,6 +4,11 @@
 (require 2htdp/itunes)
 (require 2htdp/batch-io)
 
+;; Constant definitions
+(define ITUNES-LOCATION "~/htdp/itunes.xml")
+(define ITUNES-TRACKS
+  (read-itunes-as-tracks ITUNES-LOCATION))
+
 ;; Data definitions
 
 ;; An LTracks is one of:
@@ -27,6 +32,9 @@
   (make-track "u" "To Pimp a Butterfly" "Kendrick Lamar" (* 3.25 60000) 12 D1 9 D3))
                                                          ; minute 3:15
 
+(define (fn-for-track t)
+  (... (track-name t) (track-artist t) (track-album t) (track-time t) (track-track# t) (track-added t) (track-play# t) (track-played t)))
+
 (define-struct date [year month day hour minute second])
 ;; A Date is a (make-date Integer Integer Integer Integer Integer Integer)
 ;; interp. An instance records six pieces of information:
@@ -41,13 +49,51 @@
 (define D3
   (make-date 2020 6 13 11 33 10))
 
+(define (fn-for-date d)
+  (... (date-year d) (date-month d) (date-day d) (date-hour d) (date-minute d)(date-second d)))
+
 ;; Functions
 
 ;; Any Any Any Any Any Any Any Any -> Track or #false
 ;; creates an instance of Track for legitimate inputs
 ;; otherwise it produces #false
-(define (create-track name artist album time
-                      track# added play# played)
-  T0)
+;; NOTE: is a wrapper for (make-track)
 
-;; Any
+(check-expect (create-track "u" "Kendrick Lamar" "To Pimp a Butterfly" (* 4 60000) 12 (make-date 1990 18 3 10 22 19) 4 D2) #false) ;invalid when date is invalid
+(check-expect (create-track "u" "Kendrick Lamar" "To Pimp a Butterfly" (* 4 60000) 12 D1 4 D2) T1)
+
+#;(define (create-track name artist album time
+                      track# added play# played)
+  T0) ;stub
+
+(define (create-track name artist album time track# added play# played)
+  (if (and (valid-date? added) (valid-date? played)) ;; !!!
+    (make-track name artist album time track# added play# played)
+    #false))
+
+;; Any Any Any Any Any Any -> Date or #false
+;; creates an instance of Date for legitimate inputs
+;; otherwise it produces #false
+;; NOTE: is a wrapper for (make-date)
+(check-expect (create-date 1990 1 1 0 0 0) (make-date 1990 1 1 0 0 0))
+(check-expect (create-date 2003 9 12 29 0 0) #false)
+
+;(define (create-date y mo day h m s) D0) ;stub
+
+(define (create-date y mo day h m s) 
+  (if (valid-date? (make-date y mo day h m s))
+    (make-date y mo day h m s)
+    #false)) 
+
+;; String -> LTracks
+;; create a ListOfTracks representation from the
+;; text in a file-name (an XML export from iTunes)
+
+(check-expect (read-itunes-as-text "text.xml") (list T1 T2))
+(define (read-itunes-as-text file-name) (list T1)) ;stub
+;(define (read-itunes-as-text file-name) (read-lines ITUNES-LOCATION))
+
+;; Date -> Boolean
+;; produces #true if date is between the specified bounds, #false otherwise
+;; !!!
+(define (valid-date? d) #false) ;stub
