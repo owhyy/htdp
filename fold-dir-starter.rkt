@@ -33,8 +33,8 @@
 (define (fn-for-lod lod)
   (cond [(empty? lod) ...]
         [else (...
-                (fn-for-dir (first lod))
-                (fn-for-lod (rest lod)))]))
+               (fn-for-dir (first lod))
+               (fn-for-lod (rest lod)))]))
 
 ;; ListOfImage is one of:
 ;;  - empty
@@ -61,31 +61,34 @@
 
 ;Design an abstract fold function for Dir called fold-dir. 
 
-(define (fn-for-dir dir)
-  (... (dir-name dir)
-       (fn-for-lod (sub-dirs dir))
-       (fn-for-loi (images dir))))
+#;
+(define (fn-for-dir d)
+  (local [(define (fn-for-dir d)
+            (... (dir-name d)                 ;String
+                 (fn-for-loi (dir-images d))   ;listof Image
+                 (fn-for-lod (sub-dirs d))))]
 
-(define (fn-for-lod lod)
-  (cond [(empty? lod) ...]
-        [else (...
-                (fn-for-dir (first lod))
-                (fn-for-lod (rest lod)))]))
+    [(define (fn-for-lod lod)
+       (cond [(empty? lod) (...)]
+             [else
+              (... (fn-for-dir (first lod))
+                   (fn-for-lod (rest lod)))]))]
+    (fn-for-dir d)))
 
-(define (fold-dir dir base dir) ; !!!
-  (cond
-    [(empty? dir) base]
-    [else (count-images  )]))
+;; (String (listof Image) Y -> X) (X Y -> Y) Y Dir -> X
+;; abstract fold function for dir
+(define (fold-dir c1 c2 b d)
+  (local [(define (fn-for-dir d)             ; ->X
+            (c1 (dir-name d)                 ;String
+                (dir-images d)               ;listof Image
+                (fn-for-lod (dir-sub-dirs d))))
 
-;(check-expect (fold-dir 
-;; (Dir -> X) Dir (listof Dir) -> X
-;
-;(define (fold-dir fn base dir)
-;  (cond [(empty? (sub-dirs dir)) base]
-;        [else
-;         (fn (first (sub-dirs dir))
-;             (fold-dir fn base (rest (sub-dirs dir))))]))
-               
+          (define (fn-for-lod lod)                ; ->Y
+            (cond [(empty? lod) b]
+                  [else
+                   (c2 (fn-for-dir (first lod))
+                       (fn-for-lod (rest lod)))]))]
+    (fn-for-dir d)))
 
 ;PROBLEM B:
 ;
@@ -93,12 +96,16 @@
 ;images in the directory and its sub-directories. 
 ;Use the fold-dir abstract function.
 
+;; Dir -> Number
+;; produes the number of images in the directtory and its sub-direcotries
 
+(check-expect (img-cnt-dir D5) 1)
 (check-expect (img-cnt-dir D4) 2)
-(define (img-cnt-dir dir)
-  (fold-dir + 0 (build-list 1 (length (dir-images dir)))))
-;  (fold-dir + 0 (build-list (length (dir-sub-dirs dir)) (length (dir-images dir)))))
 
+(define (img-cnt-dir dir)
+  (local
+    [(define (c1 s loi n) (+ (length loi) n))]
+    (fold-dir c1 + 0 dir)))
 
 ;PROBLEM C:
 
@@ -106,13 +113,23 @@
 ;dir and all its sub-directories for a directory with the given name. If it
 ;finds such a directory it should produce true, if not it should produce false. 
 ;Use the fold-dir abstract function.
+(check-expect (find-dir D6 "D4") true)
+(check-expect (find-dir D4 "D8") false)
 
-
+(define (find-dir dir name) 
+  (local
+    [(define (c1 s loi bool) (or (string=? s name) bool))
+     (define (c2 d lod) (not (false? d)))]
+    
+    (fold-dir c1 c2 #false dir)))
 
 ;PROBLEM D:
 ;
 ;Is fold-dir really the best way to code the function from part C? Why or 
 ;why not?
 
-
+;; not really the best way, beause there is recomputation. c1 checks if s is
+;; the same as name, which will produce a boolean (true if there is, false otherwise),
+;; and c2 checks again if that boolean is true - thus making 2 calculation where only the one
+;; from c1 is needed
 
